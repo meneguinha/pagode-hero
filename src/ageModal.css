@@ -1,0 +1,244 @@
+/* ==========================================================================
+   Modal de Confirmação de Idade (+18) e Recado "Beba com Moderação"
+   ========================================================================== */
+
+.age-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(4, 30, 40, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: ageFadeIn 0.25s ease-out forwards;
+}
+
+.age-modal-overlay.closing {
+  animation: ageFadeOut 0.2s ease-in forwards;
+  pointer-events: none;
+}
+
+.age-modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 490px;
+  background: linear-gradient(165deg, rgba(8, 56, 74, 0.98), rgba(4, 34, 46, 0.98));
+  border: 1.5px solid rgba(255, 209, 102, 0.4);
+  border-radius: 24px;
+  padding: clamp(24px, 4vw, 36px) clamp(20px, 4vw, 32px);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.65),
+    0 0 35px rgba(255, 209, 102, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  text-align: center;
+  animation: ageCardPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  color: #f2fbf9;
+}
+
+.age-modal-icon {
+  font-size: 3.2rem;
+  line-height: 1;
+  margin-bottom: 12px;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+.age-modal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.age-badge-18 {
+  background: rgba(255, 107, 107, 0.18);
+  border: 1px solid rgba(255, 107, 107, 0.55);
+  color: #ff9494;
+}
+
+.age-badge-moderation {
+  background: rgba(6, 214, 160, 0.18);
+  border: 1px solid rgba(6, 214, 160, 0.55);
+  color: #06d6a0;
+}
+
+.age-modal-title {
+  font-family: var(--marker);
+  font-weight: 400;
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+  color: #ffd166;
+  line-height: 1.2;
+  margin-bottom: 12px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+.age-modal-desc {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #d6ecea;
+  margin-bottom: 18px;
+}
+
+.age-modal-desc strong {
+  color: #ffd166;
+}
+
+.age-modal-question {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(244, 214, 160, 0.25);
+  border-radius: 14px;
+  padding: 14px 18px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 24px;
+  letter-spacing: 0.3px;
+}
+
+.age-moderation-box {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 209, 102, 0.25);
+  border-radius: 16px;
+  padding: 18px 20px;
+  margin-bottom: 24px;
+}
+
+.age-moderation-lead {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #ffd166;
+  margin-bottom: 16px;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.age-moderation-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.age-moderation-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  text-align: left;
+}
+
+.mod-icon {
+  font-size: 1.25rem;
+  line-height: 1.3;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.mod-text {
+  font-size: 0.93rem;
+  line-height: 1.45;
+  color: #e3f5f3;
+  flex: 1;
+}
+
+.mod-text strong {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.age-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.age-btn {
+  font-family: var(--marker);
+  font-weight: 400;
+  font-size: 1.05rem;
+  padding: 12px 24px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 170px;
+}
+
+.age-btn-glow {
+  background: linear-gradient(135deg, #ffd166, #ff7b54);
+  color: #042a37;
+  font-weight: 800;
+  box-shadow: 0 4px 20px rgba(255, 123, 84, 0.45);
+  width: 100%;
+}
+
+.age-btn-glow:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 26px rgba(255, 123, 84, 0.65);
+}
+
+.age-modal-actions .btn-secondary {
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #e0f2f1;
+}
+
+.age-modal-actions .btn-secondary:hover {
+  background: rgba(255, 107, 107, 0.2);
+  border-color: rgba(255, 107, 107, 0.4);
+  color: #ff8e8e;
+}
+
+/* Barra de aviso legal na tela inicial */
+.menu-legal-bar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 8px 16px;
+  margin-top: auto;
+  font-size: 0.75rem;
+  color: rgba(244, 214, 160, 0.75);
+  background: rgba(4, 30, 40, 0.55);
+  border-top: 1px solid rgba(244, 214, 160, 0.15);
+  backdrop-filter: blur(4px);
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  flex-wrap: wrap;
+}
+
+.legal-badge-tag {
+  background: rgba(255, 107, 107, 0.2);
+  border: 1px solid rgba(255, 107, 107, 0.45);
+  color: #ff9d9d;
+  font-weight: 800;
+  font-size: 0.68rem;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+@keyframes ageFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ageFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes ageCardPop {
+  0% { transform: scale(0.92) translateY(12px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}

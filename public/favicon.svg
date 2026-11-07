@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Pandeiro: aro de madeira, pele clara e platinelas -->
+  <defs>
+    <radialGradient id="pele" cx="0.4" cy="0.35" r="0.7">
+      <stop offset="0" stop-color="#fff8ec" />
+      <stop offset="1" stop-color="#f4d6a0" />
+    </radialGradient>
+    <linearGradient id="platinela" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff3c4" />
+      <stop offset="1" stop-color="#d9a441" />
+    </linearGradient>
+  </defs>
+
+  <!-- aro -->
+  <circle cx="32" cy="32" r="29" fill="#b8572f" />
+  <circle cx="32" cy="32" r="29" fill="none" stroke="#7a3a1f" stroke-width="2" />
+
+  <!-- pele -->
+  <circle cx="32" cy="32" r="21" fill="url(#pele)" stroke="#c9a46a" stroke-width="1.5" />
+
+  <!-- platinelas (pares de chapinhas nas aberturas do aro) -->
+  <g fill="url(#platinela)" stroke="#8a6d45" stroke-width="1">
+    <ellipse cx="32" cy="6.5" rx="5" ry="2.6" />
+    <ellipse cx="32" cy="57.5" rx="5" ry="2.6" />
+    <ellipse cx="6.5" cy="32" rx="2.6" ry="5" />
+    <ellipse cx="57.5" cy="32" rx="2.6" ry="5" />
+    <ellipse cx="14" cy="14" rx="4.6" ry="2.6" transform="rotate(-45 14 14)" />
+    <ellipse cx="50" cy="14" rx="4.6" ry="2.6" transform="rotate(45 50 14)" />
+    <ellipse cx="14" cy="50" rx="4.6" ry="2.6" transform="rotate(45 14 50)" />
+    <ellipse cx="50" cy="50" rx="4.6" ry="2.6" transform="rotate(-45 50 50)" />
+  </g>
+
+  <!-- brilho na pele -->
+  <ellipse cx="25" cy="24" rx="7" ry="4" fill="#ffffff" opacity="0.55" transform="rotate(-30 25 24)" />
+</svg>
