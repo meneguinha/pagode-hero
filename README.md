@@ -5,126 +5,126 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Status](https://img.shields.io/badge/Status-Online-06D6A0?style=flat)](https://meneguinha.github.io/pagode-hero/)
 
-> **"O melhor pagode é aquele que a gente toca junto!"** 👑🌴
+> **"The best pagode is the one we play together!"** 👑🌴
 
-**Pagode Hero** é um jogo de ritmo web inspirado nos clássicos jogos de guitarra e notas musicais, adaptado para a energia, o balanço e a cadência de uma autêntica **roda de samba e pagode brasileira**.
+**Pagode Hero** is a web rhythm game inspired by classic guitar rhythm games, brought to life with the groove, swing, and soulful energy of an authentic Brazilian **roda de samba and pagode**.
 
-Empunhe seu cavaquinho virtual, acompanhe as notas tiradas das palhetadas reais e mantenha a banda completa tocando no compasso!
+Pick up your virtual cavaquinho, strike the notes to real instrument picking tracks, and keep the whole band playing in rhythm!
 
 ---
 
-## 🎮 Jogue Agora no Navegador
+## 🎮 Play Online in Your Browser
 
 👉 **[https://meneguinha.github.io/pagode-hero/](https://meneguinha.github.io/pagode-hero/)**
 
 ---
 
-## ✨ Principais Funcionalidades
+## ✨ Key Features
 
-- **🎛️ Áudio Multitrack Dinâmico (Stems Reais):**
-  - A música toca separada em instrumentos independentes (Cavaquinho/Banjo, Pandeiro/Percussão, Baixo, Violão, Piano e Voz).
-  - Se você começar a errar as notas, os instrumentos vão parando um a um até sobrar só o silêncio do mico!
-  - Acerte as notas para trazer cada músico de volta para a roda.
+- **🎛️ Dynamic Multitrack Audio (Real Stems):**
+  - Audio runs on independent stems (Cavaquinho/Banjo, Percussion/Pandeiro, Bass, Acoustic Guitar, Piano, and Lead Vocals).
+  - Miss notes and the band gradually drops out instrument by instrument!
+  - Nail your hits to bring every musician back into the groove.
 
-- **🍺 Choppômetro (Barra de Resenha):**
-  - Cada acerto é um gole no copo de chopp.
-  - Copo esvaziou? É hora de gritar: **"CHAMA O GARÇOM!"**
+- **🍺 "Chopp-o-meter" (Resenha Draft Beer Gauge):**
+  - Every note hit takes a sip from your cold draft beer glass.
+  - Glass running empty? It's time to shout: **"CHAMA O GARÇOM!"** (Call the waiter!).
 
-- **🤵 Modo Overdrive: Chama o Garçom! (4x):**
-  - Ative com a barra de **ESPAÇO** para chamar o garçom, encher o caneco com um jato de chopp e multiplicar seus pontos por 4x!
+- **🤵 Overdrive Mode: "Chama o Garçom!" (4x Multiplier):**
+  - Press the **SPACEBAR** to call the waiter, pour a fresh stream of golden beer, and ignite a 4x score multiplier!
 
-- **🎤 Letra Dinâmica e Clipe de Fundo:**
-  - Letra sincronizada estilo karaokê no rodapé da pista.
-  - Clipe original em alta definição sincronizado no fundo da varanda carioca.
+- **🎤 Synchronized Karaoke Lyrics & HD Music Video:**
+  - Real-time lyrics bar with karaoke timing at the bottom of the track.
+  - High-definition official music video synced seamlessly across a sunny Rio rooftop scene.
 
-- **🔞 Verificação de Maioridade e Consumo Responsável:**
-  - Confirmação interativa de idade (+18 anos) antes de iniciar qualquer partida.
-  - Mensagem de conscientização e consumo responsável (*"Beba com moderação & Se beber, não dirija"*).
+- **🔞 Age Verification & Responsible Drinking Disclaimer:**
+  - Interactive age gate (+18 years old) before starting any match.
+  - Social responsibility disclaimer (*"Drink responsibly & Never drink and drive"*).
 
-- **🏆 Ranking e Recordes Locais:**
-  - Salva automaticamente sua maior pontuação, histórico de partidas, precisão e combos no navegador.
+- **🏆 Local Leaderboard & Statistics:**
+  - Persists high scores, match history, accuracy percentage, and longest streaks in your browser.
 
 ---
 
-## 🎹 Controles
+## 🎹 Controls
 
-O jogo foi desenhado para ser jogado tanto no teclado do computador quanto em dispositivos com tela de toque (mobile e tablets):
+Designed for both keyboard gameplay and touch screens (smartphones and tablets):
 
-| Ação / Trilha | Tecla no PC | Toque / Mobile |
+| Action / Track | PC Keyboard | Touch / Mobile |
 | :--- | :---: | :---: |
-| **Trilha 1 (Ré - D4)** | <kbd>A</kbd> ou <kbd>1</kbd> | Botão **A** |
-| **Trilha 2 (Sol - G4)** | <kbd>S</kbd> ou <kbd>2</kbd> | Botão **S** |
-| **Trilha 3 (Si - B4)** | <kbd>K</kbd> ou <kbd>3</kbd> | Botão **K** |
-| **Trilha 4 (Ré - D5)** | <kbd>L</kbd> ou <kbd>4</kbd> | Botão **L** |
-| **Chama o Garçom! (4x)** | <kbd>ESPAÇO</kbd> | Botão na tela |
+| **Track 1 (D4 - Ré)** | <kbd>A</kbd> or <kbd>1</kbd> | Button **A** |
+| **Track 2 (G4 - Sol)** | <kbd>S</kbd> or <kbd>2</kbd> | Button **S** |
+| **Track 3 (B4 - Si)** | <kbd>K</kbd> or <kbd>3</kbd> | Button **K** |
+| **Track 4 (D5 - Ré)** | <kbd>L</kbd> or <kbd>4</kbd> | Button **L** |
+| **Chama o Garçom! (4x)** | <kbd>SPACE</kbd> | On-screen button |
 
-> 💡 **Dica de Calibração:** Se estiver utilizando fone de ouvido Bluetooth ou sentir atraso no som, acesse o menu **Configurações** e ajuste a latência de áudio em milissegundos.
+> 💡 **Latency Calibration Tip:** Using Bluetooth headphones or feeling audio desync? Open the **Settings** menu to calibrate audio latency down to the millisecond.
 
 ---
 
-## 🎵 Repertório em Destaque
+## 🎵 Featured Track
 
 - **Melhor Eu Ir / Ligando os Fatos** — *Grupo Menos é Mais (Churrasquinho)*
   - BPM: 88 (Cadenciado • Roda de Samba)
-  - 3 Níveis de Dificuldade: **Fácil**, **Médio** e **Mestre 👑**
+  - 3 Difficulty Tiers: **Easy** (Fácil), **Medium** (Médio), and **Master 👑** (Mestre)
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+## 🛠️ Tech Stack
 
-- **[TypeScript](https://www.typescriptlang.org/)** — Tipagem estática robusta para mecânicas de pontuação, motor de jogo e notas.
-- **[Vite](https://vitejs.dev/)** — Build tool ultra-rápida e ambiente de desenvolvimento moderno.
-- **[Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)** — Sincronização precisa de múltiplos canais de áudio com baixa latência e controle dinâmico de volume/ganho.
-- **HTML5 Canvas 2D** — Renderização suave a 60 FPS da pista de notas caindo em perspectiva.
-- **CSS3 Moderno** — Design responsivo com efeitos de pinceladas de tinta, glassmorphism e animações temáticas.
-- **[Canvas Confetti](https://www.npmjs.com/package/canvas-confetti)** — Chuva de confetes ao fechar aquela apresentação digna de bamba!
-- **[GitHub Actions](https://github.com/features/actions)** — Pipeline de CI/CD para deploy automático no GitHub Pages a cada commit.
+- **[TypeScript](https://www.typescriptlang.org/)** — Strict type safety for scoring mechanics, hit detection, and engine logic.
+- **[Vite](https://vitejs.dev/)** — Lightning-fast development tooling and optimized production builds.
+- **[Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)** — Low-latency multichannel audio playback with real-time gain node automation for dynamic muting.
+- **HTML5 Canvas 2D** — Smooth 60 FPS perspective highway rendering for falling notes and visual feedback.
+- **Modern CSS3** — Responsive layout, SVG brush masks, glassmorphism, and tropical summer color palettes.
+- **[Canvas Confetti](https://www.npmjs.com/package/canvas-confetti)** — Celebration particle effects for top performance finishes.
+- **[GitHub Actions](https://github.com/features/actions)** — Automated CI/CD pipeline building and deploying directly to GitHub Pages on every push.
 
 ---
 
-## 🚀 Como Executar Localmente
+## 🚀 Running Locally
 
-### Pré-requisitos
-- [Node.js](https://nodejs.org/) (versão 18 ou superior)
-- `npm` ou seu gerenciador de pacotes preferido
+### Prerequisites
+- [Node.js](https://nodejs.org/) (v18 or higher recommended)
+- `npm` or your preferred package manager
 
-### Passo a Passo
+### Step-by-Step
 
-1. **Clone o repositório:**
+1. **Clone the repository:**
    ```bash
    git clone https://github.com/meneguinha/pagode-hero.git
    cd pagode-hero
    ```
 
-2. **Instale as dependências:**
+2. **Install dependencies:**
    ```bash
    npm install
    ```
 
-3. **Inicie o servidor de desenvolvimento:**
+3. **Start the local dev server:**
    ```bash
    npm run dev
    ```
 
-4. **Acesse no navegador:**
-   Abra [http://localhost:5173/](http://localhost:5173/) e aproveite a resenha!
+4. **Open in your browser:**
+   Navigate to [http://localhost:5173/](http://localhost:5173/) and join the roda!
 
-5. **Para gerar a build de produção:**
+5. **Build for production:**
    ```bash
    npm run build
    ```
 
 ---
 
-## ⚖️ Responsabilidade e Classificação Indicativa
+## ⚖️ Age Disclaimer & Social Responsibility
 
-🔞 **Classificação: 18+**  
-Este jogo faz alusão ao ambiente festivo e à cultura dos botecos e rodas de samba brasileiros, com referências a chopp gelado. O jogo promove o entretenimento consciente: **Beba com moderação** e **Se beber, nunca dirija**.
+🔞 **Rating: 18+**  
+This game celebrates Brazilian samba culture and festive gatherings, featuring references to draft beer (chopp). It promotes conscious and safe entertainment: **Enjoy responsibly** and **Never drink and drive**.
 
 ---
 
-## 📄 Licença
+## 📄 License
 
-Distribuído sob a licença MIT. Consulte `LICENSE` para mais informações.
+Distributed under the MIT License. See `LICENSE` for details.
 
-Desenvolvido com carinho e muito pagode por [Felipe Nunes Menegotto (meneguinha)](https://github.com/meneguinha).
+Crafted with rhythm, passion, and Brazilian pagode by [Felipe Nunes Menegotto (meneguinha)](https://github.com/meneguinha).
