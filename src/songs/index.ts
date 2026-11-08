@@ -46,18 +46,15 @@ function createMelhorEuIrNotes(): Note[] {
   add(9.5, 1, N.G4, '🪕');
 
   // --- PARTE 1: "Melhor eu ir... tudo bem..." (10.2s a 22.0s) ---
-  // "Me-lhor eu ir..."
   add(10.2, 2, N.B4, 'Me-');
   add(11.0, 2, N.A4, 'lhor');
   add(11.8, 1, N.G4, 'eu');
   add(12.4, 1, N.G4, 'ir...');
 
-  // "Tu-do bem..."
   add(13.8, 2, N.B4, 'Tu-');
   add(14.3, 3, N.C5, 'do');
   add(15.3, 3, N.D5, 'bem...', true);
 
-  // "O pas-sa-do não mu-da por na-da..."
   add(17.0, 3, N.D5, 'O');
   add(17.6, 3, N.E5, 'pas-');
   add(18.2, 3, N.D5, 'sa-');
@@ -78,7 +75,6 @@ function createMelhorEuIrNotes(): Note[] {
   add(28.0, 3, N.C5, 'ca-');
   add(29.0, 3, N.D5, 'bou...', true);
 
-  // "Não tem jeito, acabou a estrada..."
   add(30.5, 3, N.D5, 'Não');
   add(31.2, 3, N.E5, 'tem');
   add(31.9, 3, N.D5, 'jei-');
@@ -103,7 +99,6 @@ function createMelhorEuIrNotes(): Note[] {
   add(44.1, 1, N.Fs4, 'clu-');
   add(45.0, 1, N.G4, 'são...');
 
-  // "Que você brincou com o meu coração..."
   add(46.5, 1, N.G4, 'Que');
   add(47.2, 2, N.A4, 'vo-');
   add(47.9, 2, N.B4, 'cê');
@@ -114,7 +109,7 @@ function createMelhorEuIrNotes(): Note[] {
   add(51.4, 1, N.G4, 'co-ra-');
   add(52.2, 2, N.A4, 'ção! 💔', true);
 
-  // --- SEGUNDO CICLO DA RESENHA (54.0s a 76.0s) ---
+  // --- SEGUNDO CICLO DA RESENHA (54.0s a 76.5s) ---
   add(54.0, 1, N.G4, '🍢');
   add(55.0, 2, N.B4, 'Me-');
   add(55.8, 2, N.A4, 'lhor');
@@ -177,19 +172,29 @@ export const SONGS: Song[] = [
     videoUrl: `${import.meta.env.BASE_URL}video/melhor_eu_ir_clipe.mp4`,
     videoOffset: 0,
     color: '#ff7b54',
-    description: 'Notas tiradas das palhetadas reais do cavaquinho! Errou um pouco, o cavaco para; continuou errando, param pandeiro, baixo, violão e banjo. Acerte para trazer a banda de volta!',
+    description:
+      'Notas tiradas das palhetadas reais do cavaquinho! Errou um pouco, o cavaco para; continuou errando, param pandeiro, baixo, violão e banjo. Acerte para trazer a banda de volta!',
     harmonyChords: acordesMelhorEuIr,
     lyrics: [
       { time: 0.0, text: '🍢 Prepare a palheta! O Menos é Mais vai entrar! 🍢' },
-      { time: 4.8, text: '🪕 Solo de Cavaquinho - Churrasquinho Menos é Mais 🪕' },
-      { time: 10.2, text: 'Melhor eu ir... tudo bem...' },
-      { time: 17.0, text: 'O passado não muda por nada...' },
-      { time: 23.5, text: 'Melhor eu ir... se acabou...' },
-      { time: 30.5, text: 'Não tem jeito, acabou a estrada...' },
-      { time: 37.0, text: 'E ligando os fatos, eu cheguei à conclusão... 🔥' },
-      { time: 46.5, text: 'Que você brincou com o meu coração! 💔' },
-      { time: 54.0, text: 'Melhor eu ir... desce mais uma gelada! 🍻' },
-      { time: 63.0, text: 'E ligando os fatos... que resenha, Menos é Mais!' },
+      { time: 4.8, text: '🪕 Solo de Cavaquinho — Churrasquinho Menos é Mais 🪕' },
+      { time: 10.2, text: '🎤 Melhor eu ir... tudo bem, vai ser melhor só...' },
+      { time: 17.0, text: '🎤 Se teve que ser assim, é que tinha que acontecer...' },
+      { time: 23.5, text: '🎤 Melhor eu ir... se acabou, não pense no pior...' },
+      { time: 30.5, text: '🎤 Não deu pra você, também não deu pra mim...' },
+      { time: 37.0, text: '🔥 E vê se não vai chorar, não fica procurando explicação...' },
+      { time: 46.5, text: '💔 Eu só queria te dizer... que a gente tentou, mas melhor eu ir!' },
+      { time: 54.0, text: '🍻 Melhor eu ir... tudo bem, vai ser melhor só!' },
+      { time: 63.0, text: '🎶 Canta junto com a roda! Segura a cadência no cavaco!' },
+      { time: 75.0, text: '🪕 Virada de partido-alto! Agora vem "Ligando os Fatos"!' },
+      { time: 88.0, text: '🎤 Você deixou saudade, mas levou a minha paz...' },
+      { time: 100.0, text: '🎤 Já faz algum tempo que você não me procura mais...' },
+      { time: 112.0, text: '🔥 E ligando os fatos, eu cheguei à conclusão...' },
+      { time: 124.0, text: '💔 Que você brincou com o meu coração!' },
+      { time: 136.0, text: '🍻 Toda a roda cantando alto: Ligando os fatos!' },
+      { time: 152.0, text: '🪕 Solta o braço no cavaquinho que o samba tá pegando fogo!' },
+      { time: 168.0, text: '👑 Reta final da resenha — mantém o combo lá no alto!' },
+      { time: 185.0, text: '👏 Saideira do Churrasquinho Menos é Mais! Que palhetada!' },
     ],
     notes: createMelhorEuIrNotes(),
   },

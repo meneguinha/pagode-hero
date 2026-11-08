@@ -13,8 +13,8 @@ const HOP = 512;
 
 const MIN_GAP_BY_DIFFICULTY: Record<Difficulty, number> = {
   facil: 0.5,
-  medio: 0.3,
-  mestre: 0.2,
+  medio: 0.33,
+  mestre: 0.25,
 };
 
 // Uma nota dourada (Star Power) a cada bloco de N segundos
@@ -22,12 +22,16 @@ const STAR_POWER_BLOCK_SECONDS = 12;
 
 const cache = new Map<string, Note[]>();
 
-export function generateChart(buffer: AudioBuffer, difficulty: Difficulty, cacheKey: string): Note[] {
+export async function generateChart(
+  buffer: AudioBuffer,
+  difficulty: Difficulty,
+  cacheKey: string
+): Promise<Note[]> {
   const key = `${cacheKey}:${difficulty}`;
   const cached = cache.get(key);
   if (cached) return cached.map((n) => ({ ...n }));
 
-  const analysis = getAnalysis(buffer, cacheKey);
+  const analysis = await getAnalysis(buffer, cacheKey);
   const minGap = MIN_GAP_BY_DIFFICULTY[difficulty];
 
   // Os ataques mais fortes têm prioridade ao respeitar o intervalo mínimo
@@ -76,7 +80,7 @@ interface Onset {
 
 const analysisCache = new Map<string, { onsets: Onset[] }>();
 
-function getAnalysis(buffer: AudioBuffer, cacheKey: string) {
+async function getAnalysis(buffer: AudioBuffer, cacheKey: string) {
   const cached = analysisCache.get(cacheKey);
   if (cached) return cached;
 
@@ -96,7 +100,13 @@ function getAnalysis(buffer: AudioBuffer, cacheKey: string) {
   const centroid = new Float32Array(frameCount);
   const rms = new Float32Array(frameCount);
 
+  // Processa em fatias cedendo brevemente à thread principal para não travar a animação da UI
+  const CHUNK_FRAMES = 2000;
   for (let f = 0; f < frameCount; f++) {
+    if (f > 0 && f % CHUNK_FRAMES === 0) {
+      await new Promise((r) => setTimeout(r, 0));
+    }
+
     const offset = f * HOP;
     let energy = 0;
     for (let i = 0; i < FFT_SIZE; i++) {
@@ -127,7 +137,10 @@ function getAnalysis(buffer: AudioBuffer, cacheKey: string) {
   // Limiar adaptativo: média local (±0,25s) + margem; ignora trechos quase silenciosos
   const halfWin = Math.round((0.25 * sr) / HOP);
   const peakRadius = 3;
-  const maxRms = rms.reduce((a, b) => Math.max(a, b), 0);
+  let maxRms = 0;
+  for (let i = 0; i < rms.length; i++) {
+    if (rms[i] > maxRms) maxRms = rms[i];
+  }
   const silence = maxRms * 0.06;
   const onsets: Onset[] = [];
 

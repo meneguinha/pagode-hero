@@ -31,8 +31,8 @@ const GARCOM_DURATION = 12; // segundos de 4x depois que o garçom enche o copo
 // Tempo (s) que a nota leva do topo da pista até o alvo
 const SPEED_BY_DIFFICULTY: Record<Difficulty, number> = {
   facil: 2.4,
-  medio: 2.0,
-  mestre: 1.85,
+  medio: 2.05,
+  mestre: 1.95,
 };
 
 export interface GameEngineOptions {
@@ -43,6 +43,7 @@ export interface GameEngineOptions {
   onSongEnd: (finalScore: GameScore) => void;
   onMuteLevelChange?: (level: number) => void;
   onLoadingProgress?: (msg: string) => void;
+  onTimeUpdate?: (currentTime: number, duration: number) => void;
   backgroundVideo?: HTMLVideoElement;
 }
 
@@ -114,9 +115,11 @@ export class GameEngine {
   private onSongEnd: (finalScore: GameScore) => void;
   private onMuteLevelChange?: (level: number) => void;
   private onLoadingProgress?: (msg: string) => void;
+  private onTimeUpdate?: (currentTime: number, duration: number) => void;
   private backgroundVideo?: HTMLVideoElement;
 
   private animFrameId: number = 0;
+  private resizeObserver?: ResizeObserver;
 
   constructor(options: GameEngineOptions) {
     this.canvas = options.canvas;
@@ -135,18 +138,56 @@ export class GameEngine {
     this.onSongEnd = options.onSongEnd;
     this.onMuteLevelChange = options.onMuteLevelChange;
     this.onLoadingProgress = options.onLoadingProgress;
+    this.onTimeUpdate = options.onTimeUpdate;
     this.backgroundVideo = options.backgroundVideo;
 
     this.resizeCanvas();
     window.addEventListener('resize', this.resizeCanvas);
+    if (typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver = new ResizeObserver(() => this.resizeCanvas());
+      this.resizeObserver.observe(this.canvas);
+    }
   }
 
   private resizeCanvas = () => {
     const rect = this.canvas.getBoundingClientRect();
-    this.canvas.width = rect.width * window.devicePixelRatio;
-    this.canvas.height = rect.height * window.devicePixelRatio;
-    this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    const dpr = window.devicePixelRatio || 1;
+    this.canvas.width = rect.width * dpr;
+    this.canvas.height = rect.height * dpr;
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   };
+
+  /**
+   * Geometria responsiva da Highway em perspectiva, compartilhada entre render() e spawnParticles().
+   */
+  private getHighwayGeometry(width: number, height: number) {
+    const topWidth = Math.min(width * 0.45, 260);
+    const bottomWidth = Math.min(width * 0.88, 520);
+    const topY = height * 0.11;
+    const bottomY = height * 0.91;
+    const targetY = height * 0.78;
+
+    const centerX = width / 2;
+    const topStartX = centerX - topWidth / 2;
+    const bottomStartX = centerX - bottomWidth / 2;
+
+    const targetProgress = (targetY - topY) / (bottomY - topY);
+    const targetLaneWidth = (topWidth + (bottomWidth - topWidth) * targetProgress) / 4;
+    const targetStartX = centerX - (targetLaneWidth * 4) / 2;
+
+    return {
+      topWidth,
+      bottomWidth,
+      topY,
+      bottomY,
+      targetY,
+      centerX,
+      topStartX,
+      bottomStartX,
+      targetLaneWidth,
+      targetStartX,
+    };
+  }
 
   public async start() {
     await soundEngine.resume();
@@ -160,7 +201,7 @@ export class GameEngine {
       if (guitar) {
         this.onLoadingProgress?.('Lendo as palhetadas do cavaquinho...');
         await new Promise((r) => setTimeout(r, 0)); // deixa a mensagem aparecer antes da análise
-        this.notes = generateChart(guitar, this.difficulty, this.song.id);
+        this.notes = await generateChart(guitar, this.difficulty, this.song.id);
         this.score.totalNotes = this.notes.length;
       }
     } else if (this.song.audioUrl) {
@@ -178,22 +219,33 @@ export class GameEngine {
     this.loop();
   }
 
+  public getPaused(): boolean {
+    return this.isPaused;
+  }
+
+  public isGameRunning(): boolean {
+    return this.isRunning;
+  }
+
   public pause() {
-    if (!this.isRunning) return;
+    if (!this.isRunning || this.isPaused) return;
     this.isPaused = true;
     this.pauseTime = performance.now();
+    this.activeKeys = [false, false, false, false];
     soundEngine.pauseAudioTrack();
     this.backgroundVideo?.pause();
   }
 
   public resume() {
-    if (!this.isPaused) return;
+    if (!this.isRunning || !this.isPaused) return;
     this.isPaused = false;
     this.lastFrameTime = performance.now();
     const elapsedPaused = performance.now() - this.pauseTime;
     this.startTime += elapsedPaused;
-    soundEngine.playAudioTrack(this.getSongCurrentTime());
-    this.loop();
+    const current = this.getSongCurrentTime();
+    soundEngine.playAudioTrack(current);
+    soundEngine.setMuteLevel(this.muteLevel);
+    this.syncVideo(current);
   }
 
   public stop() {
@@ -202,6 +254,7 @@ export class GameEngine {
     soundEngine.pauseAudioTrack();
     this.backgroundVideo?.pause();
     window.removeEventListener('resize', this.resizeCanvas);
+    this.resizeObserver?.disconnect();
   }
 
   /**
@@ -236,6 +289,14 @@ export class GameEngine {
     return (performance.now() - this.startTime) / 1000;
   }
 
+  private computeMultiplier(): number {
+    if (this.score.isChamaGarcom) return 4;
+    if (this.score.streak >= 25) return 4;
+    if (this.score.streak >= 15) return 3;
+    if (this.score.streak >= 8) return 2;
+    return 1;
+  }
+
   /**
    * Processa entrada de tecla do usuário (down ou up)
    */
@@ -266,6 +327,7 @@ export class GameEngine {
       // Acertou a nota!
       closestNote.hit = true;
       let points: number;
+
       if (minDiff <= 0.09) {
         points = 100;
         this.score.hitCount.perfeito++;
@@ -289,19 +351,8 @@ export class GameEngine {
         this.score.maxStreak = this.score.streak;
       }
 
-      // Multiplicador baseado em combo
-      if (this.score.isChamaGarcom) {
-        this.score.multiplier = 4;
-      } else if (this.score.streak >= 25) {
-        this.score.multiplier = 4;
-      } else if (this.score.streak >= 15) {
-        this.score.multiplier = 3;
-      } else if (this.score.streak >= 8) {
-        this.score.multiplier = 2;
-      } else {
-        this.score.multiplier = 1;
-      }
-
+      // Multiplicador unificado baseado em combo / Chama o Garçom
+      this.score.multiplier = this.computeMultiplier();
       this.score.points += points * this.score.multiplier;
 
       // Cada acerto é um gole no chopp (enquanto o garçom está na mesa, o copo fica cheio)
@@ -342,7 +393,7 @@ export class GameEngine {
 
   private registerMiss() {
     this.score.streak = 0;
-    this.score.multiplier = 1;
+    this.score.multiplier = this.computeMultiplier();
     this.score.hitCount.mico++;
     this.changeErrorMeter(ERROR_PER_MISS);
 
@@ -389,13 +440,12 @@ export class GameEngine {
    */
   public activateChamaGarcom() {
     // Só dá para chamar o garçom com o copo vazio
-    if (!this.isRunning || this.score.isChamaGarcom || this.score.resenhaMeter > 0) return;
+    if (!this.isRunning || this.isPaused || this.score.isChamaGarcom || this.score.resenhaMeter > 0) return;
 
     this.score.isChamaGarcom = true;
     this.score.chamaGarcomTimeLeft = GARCOM_DURATION;
     this.score.multiplier = 4;
     this.score.resenhaMeter = 100; // o garçom chega e enche o copo
-
 
     // Chuva de confete e brilho
     try {
@@ -413,14 +463,9 @@ export class GameEngine {
   }
 
   private spawnParticles(track: number) {
-    const width = this.canvas.getBoundingClientRect().width;
-    const height = this.canvas.getBoundingClientRect().height;
-    const targetY = height * 0.85;
-
-    const trackWidth = 85;
-    const totalBottomWidth = trackWidth * 4;
-    const startX = (width - totalBottomWidth) / 2;
-    const targetX = startX + track * trackWidth + trackWidth / 2;
+    const rect = this.canvas.getBoundingClientRect();
+    const { targetY, targetStartX, targetLaneWidth } = this.getHighwayGeometry(rect.width, rect.height);
+    const targetX = targetStartX + track * targetLaneWidth + targetLaneWidth / 2;
 
     const color = this.trackColors[track];
 
@@ -464,7 +509,7 @@ export class GameEngine {
         this.score.chamaGarcomTimeLeft -= dt;
         if (this.score.chamaGarcomTimeLeft <= 0) {
           this.score.isChamaGarcom = false;
-                this.score.multiplier = Math.min(4, Math.floor(this.score.streak / 10) + 1);
+          this.score.multiplier = this.computeMultiplier();
           this.onScoreUpdate({ ...this.score });
         }
       }
@@ -477,7 +522,8 @@ export class GameEngine {
         }
       }
 
-      // Renderiza Canvas
+      // Sincroniza tempo, clipe e renderiza Canvas
+      this.onTimeUpdate?.(Math.max(0, currentTime), this.songDuration);
       this.syncVideo(currentTime);
       this.render(currentTime);
     }
@@ -495,16 +541,18 @@ export class GameEngine {
 
     this.ctx.clearRect(0, 0, width, height);
 
-    // Geometria da Highway em perspectiva
-    const topWidth = Math.min(width * 0.45, 260);
-    const bottomWidth = Math.min(width * 0.88, 520);
-    const topY = height * 0.12;
-    const bottomY = height * 0.98;
-    const targetY = height * 0.84;
-
-    const centerX = width / 2;
-    const topStartX = centerX - topWidth / 2;
-    const bottomStartX = centerX - bottomWidth / 2;
+    const {
+      topWidth,
+      bottomWidth,
+      topY,
+      bottomY,
+      targetY,
+      centerX,
+      topStartX,
+      bottomStartX,
+      targetLaneWidth,
+      targetStartX,
+    } = this.getHighwayGeometry(width, height);
 
     // 1. Fundo da Highway (Asfalto/Madeira de Boteco)
     this.ctx.save();
@@ -588,10 +636,6 @@ export class GameEngine {
     }
 
     // 2. Linha de Alvo / Hit Zone (Onde a palheta acerta!)
-    const targetProgress = (targetY - topY) / (bottomY - topY);
-    const targetLaneWidth = (topWidth + (bottomWidth - topWidth) * targetProgress) / 4;
-    const targetStartX = centerX - (targetLaneWidth * 4) / 2;
-
     this.ctx.beginPath();
     this.ctx.lineWidth = 4;
     this.ctx.strokeStyle = this.score.isChamaGarcom ? '#ffe29a' : '#f6efe2';
@@ -666,17 +710,6 @@ export class GameEngine {
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         this.ctx.fillText('⭐', noteX, currentY);
-      }
-
-      // Sílaba cantada da música (ex: "Me-", "lhor", "eu", "ir", "LA-PA-DA")
-      if (note.syllable) {
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = `bold ${Math.max(13, Math.floor(noteRadius * 0.75))}px sans-serif`;
-        this.ctx.textAlign = 'center';
-        this.ctx.textBaseline = 'bottom';
-        this.ctx.shadowColor = '#000000';
-        this.ctx.shadowBlur = 8;
-        this.ctx.fillText(note.syllable, noteX, currentY - noteRadius - 4);
       }
 
       this.ctx.restore();

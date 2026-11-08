@@ -24,8 +24,12 @@ export class SoundEngine {
   private isMuted: boolean = false;
   private masterGain: GainNode | null = null;
 
-  // Stems Buffers decodificados (PCM em memória)
+  // Cache global por URL para suportar múltiplas músicas sem recarregar nem misturar faixas
+  private urlBufferCache = new Map<string, AudioBuffer>();
+
+  // Stems Buffers ativos da música selecionada (PCM em memória)
   private stemBuffers: Partial<Record<StemName, AudioBuffer>> = {};
+  private stemUrls: Partial<Record<StemName, string>> = {};
 
   // Um nó de ganho por stem, para mutar cada instrumento separadamente
   private stemGainNodes: Partial<Record<StemName, GainNode>> = {};
@@ -135,7 +139,8 @@ export class SoundEngine {
   }
 
   /**
-   * Carrega os stems isolados (drums, guitar, vocals, bass, piano, other)
+   * Carrega os stems isolados (drums, guitar, vocals, bass, piano, other),
+   * diferenciando por URL para suportar múltiplas músicas no catálogo.
    */
   public async loadStems(stems: SongStems, onProgress?: (msg: string) => void): Promise<void> {
     this.init();
@@ -146,13 +151,24 @@ export class SoundEngine {
     const total = available.length;
     let completed = 0;
 
+    // Limpa referências de stems que a nova música não possua
+    for (const key of stemKeys) {
+      if (!stems[key]) {
+        delete this.stemBuffers[key];
+        delete this.stemUrls[key];
+      }
+    }
+
     await Promise.all(
       available.map(async (key) => {
         const url = stems[key];
         if (!url) return;
 
-        // Se já está carregado em cache de memória
-        if (this.stemBuffers[key as StemName]) {
+        // Se a mesma URL já está no cache, reutiliza instantaneamente
+        const cached = this.urlBufferCache.get(url);
+        if (cached) {
+          this.stemBuffers[key] = cached;
+          this.stemUrls[key] = url;
           completed++;
           onProgress?.(`Preparando trilha ${key} (${completed}/${total})...`);
           return;
@@ -162,7 +178,10 @@ export class SoundEngine {
           onProgress?.(`Baixando faixa ${key} (${completed + 1}/${total})...`);
           const res = await fetch(url);
           const arrayBuffer = await res.arrayBuffer();
-          this.stemBuffers[key as StemName] = await this.ctx!.decodeAudioData(arrayBuffer);
+          const decoded = await this.ctx!.decodeAudioData(arrayBuffer);
+          this.urlBufferCache.set(url, decoded);
+          this.stemBuffers[key] = decoded;
+          this.stemUrls[key] = url;
           completed++;
           onProgress?.(`Faixa ${key} pronta (${completed}/${total})`);
         } catch (err) {
@@ -184,23 +203,36 @@ export class SoundEngine {
 
     let arrayBuffer: ArrayBuffer;
     if (typeof backingSource === 'string') {
-      const response = await fetch(backingSource);
-      arrayBuffer = await response.arrayBuffer();
+      const cached = this.urlBufferCache.get(backingSource);
+      if (cached) {
+        this.audioBuffer = cached;
+      } else {
+        const response = await fetch(backingSource);
+        arrayBuffer = await response.arrayBuffer();
+        this.audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
+        this.urlBufferCache.set(backingSource, this.audioBuffer);
+      }
     } else {
       arrayBuffer = await backingSource.arrayBuffer();
+      this.audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
     }
 
-    this.audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
-
     if (cavacoSource) {
-      let cavacoArrayBuffer: ArrayBuffer;
       if (typeof cavacoSource === 'string') {
-        const response = await fetch(cavacoSource);
-        cavacoArrayBuffer = await response.arrayBuffer();
+        const cached = this.urlBufferCache.get(cavacoSource);
+        if (cached) {
+          this.stemBuffers.guitar = cached;
+        } else {
+          const response = await fetch(cavacoSource);
+          const cavacoArrayBuffer = await response.arrayBuffer();
+          const decoded = await this.ctx.decodeAudioData(cavacoArrayBuffer);
+          this.urlBufferCache.set(cavacoSource, decoded);
+          this.stemBuffers.guitar = decoded;
+        }
       } else {
-        cavacoArrayBuffer = await cavacoSource.arrayBuffer();
+        const cavacoArrayBuffer = await cavacoSource.arrayBuffer();
+        this.stemBuffers.guitar = await this.ctx.decodeAudioData(cavacoArrayBuffer);
       }
-      this.stemBuffers.guitar = await this.ctx.decodeAudioData(cavacoArrayBuffer);
     }
   }
 
@@ -273,6 +305,36 @@ export class SoundEngine {
   /** Atraso extra (ms) do som do jogador, ex.: fone Bluetooth. */
   public setUserLatency(ms: number) {
     this.userLatency = ms / 1000;
+  }
+
+  public getTotalLatencyMs(): number {
+    const hwLatency = this.ctx ? (this.ctx.outputLatency || this.ctx.baseLatency || 0) : 0;
+    return Math.round((hwLatency + this.userLatency) * 1000);
+  }
+
+  /**
+   * Toca um pulso percussivo curto (estilo pandeiro/clave) para calibrar a latência nas configurações.
+   */
+  public async playCalibrationClick(accent = false): Promise<void> {
+    await this.resume();
+    if (!this.ctx || !this.masterGain) return;
+
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(accent ? 980 : 660, now);
+    osc.frequency.exponentialRampToValueAtTime(accent ? 280 : 190, now + 0.065);
+
+    gain.gain.setValueAtTime(0.45, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.075);
+
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+
+    osc.start(now);
+    osc.stop(now + 0.08);
   }
 }
 

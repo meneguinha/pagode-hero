@@ -5,7 +5,16 @@ import type { Song, GameScore, Difficulty } from './types';
 import { GameEngine } from './game/engine';
 import { soundEngine, MUTE_STAGES } from './audio/soundEngine';
 import { renderKiosqueBackground, renderKiosqueFrame } from './ui/kiosqueScene';
-import { loadSettings, saveSettings, loadScores, addScore, bestScore, type Settings } from './storage';
+import {
+  loadSettings,
+  saveSettings,
+  loadScores,
+  addScore,
+  bestScore,
+  isAgeVerified,
+  setAgeVerified,
+  type Settings,
+} from './storage';
 
 // Pinceladas usadas como máscara nos botões e painéis (cantos irregulares de tinta)
 const BRUSH_BAR_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 80" preserveAspectRatio="none"><path d="M6 14 C40 8 90 12 140 8 S240 10 300 6 S370 9 394 12 L386 22 L398 31 L388 41 L396 51 L384 61 L392 71 C340 75 280 70 220 74 S110 70 60 74 S20 72 4 68 L12 58 L2 46 L10 36 L0 24 Z"/><path d="M300 2 h70 v3 h-70z M40 76 h90 v3 h-90z"/></svg>`;
@@ -16,6 +25,13 @@ const DIFFICULTY_LABEL: Record<Difficulty, string> = { facil: 'Fácil', medio: '
 
 const escapeHtml = (text: string) =>
   text.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+
+const formatTime = (seconds: number): string => {
+  const s = Math.max(0, Math.floor(seconds));
+  const mins = Math.floor(s / 60);
+  const secs = s % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
 
 const ICONS = {
   play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="currentColor"/></svg>',
@@ -43,6 +59,7 @@ class PagodeHeroApp {
   private gameEngine: GameEngine | null = null;
   private settings: Settings = loadSettings();
   private menuView: MenuView = 'songs';
+  private calibrationTimers: number[] = [];
 
   private appContainer: HTMLElement;
 
@@ -67,7 +84,16 @@ class PagodeHeroApp {
     }
   }
 
+  private clearCalibrationTimers() {
+    for (const id of this.calibrationTimers) {
+      window.clearTimeout(id);
+    }
+    this.calibrationTimers = [];
+  }
+
   private renderSongSelect() {
+    this.clearCalibrationTimers();
+    document.getElementById('pause-modal-overlay')?.remove();
     this.currentScreen = 'select';
     this.appContainer.dataset.screen = 'select';
     let mainContent = document.getElementById('main-content');
@@ -128,6 +154,7 @@ class PagodeHeroApp {
     const menuItems = mainContent.querySelectorAll<HTMLButtonElement>('.menu-item[data-view]');
     menuItems.forEach((item) => {
       item.addEventListener('click', () => {
+        this.clearCalibrationTimers();
         this.menuView = item.dataset.view as MenuView;
         this.renderSidePanel();
       });
@@ -140,28 +167,33 @@ class PagodeHeroApp {
   }
 
   private launchGame(button?: HTMLButtonElement) {
-    this.showAgeVerification(
-      () => {
-        if (button) {
-          button.disabled = true;
-          const label = button.querySelector('span');
-          if (label) label.textContent = 'Carregando...';
-        }
-        this.startGame();
-      },
-      () => {
-        if (button) {
-          button.disabled = false;
-          const label = button.querySelector('span');
-          if (label) label.textContent = 'Jogar';
-        }
+    this.clearCalibrationTimers();
+    const begin = () => {
+      if (button) {
+        button.disabled = true;
+        const label = button.querySelector('span');
+        if (label) label.textContent = 'Carregando...';
       }
-    );
+      this.startGame();
+    };
+
+    if (isAgeVerified()) {
+      begin();
+      return;
+    }
+
+    this.showAgeVerification(begin, () => {
+      if (button) {
+        button.disabled = false;
+        const label = button.querySelector('span');
+        if (label) label.textContent = 'Jogar';
+      }
+    });
   }
 
   /**
    * Confirmação obrigatória de maioridade (+18) e recado de "Beba com moderação"
-   * exibidos antes de o jogo começar.
+   * exibidos antes da primeira partida da sessão.
    */
   private showAgeVerification(onConfirm: () => void, onCancel?: () => void) {
     document.getElementById('age-modal-overlay')?.remove();
@@ -261,6 +293,7 @@ class PagodeHeroApp {
       `;
 
       overlay.querySelector('#btn-age-start')?.addEventListener('click', () => {
+        setAgeVerified();
         overlay.classList.add('closing');
         setTimeout(() => {
           overlay.remove();
@@ -312,6 +345,7 @@ class PagodeHeroApp {
         <div class="key-hint">
           <kbd class="k0">A</kbd><kbd class="k1">S</kbd><kbd class="k2">K</kbd><kbd class="k3">L</kbd>
           <span class="key-hint-sep">🍺</span><kbd>ESPAÇO</kbd>
+          <span class="key-hint-sep">⏸</span><kbd>ESC</kbd>
         </div>`;
 
       panel.querySelectorAll<HTMLButtonElement>('.song-row').forEach((row) => {
@@ -324,6 +358,9 @@ class PagodeHeroApp {
             return;
           }
           this.selectedSong = found;
+          if (found.stems) {
+            soundEngine.loadStems(found.stems);
+          }
           this.renderSidePanel();
         });
       });
@@ -385,6 +422,12 @@ class PagodeHeroApp {
         <span>Atraso do som: <strong id="set-latency-value">${this.settings.latencyMs} ms</strong></span>
         <input id="set-latency" type="range" min="-100" max="300" step="10" value="${this.settings.latencyMs}" />
         <small>Notas chegando antes do som? Aumente. Fone Bluetooth costuma pedir 150–250 ms.</small>
+        <div class="latency-tester">
+          <button type="button" id="btn-test-latency" class="btn-secondary latency-test-btn">
+            🥁 Testar Batida (4x)
+          </button>
+          <span id="latency-beat-dot" class="latency-beat-dot" title="Pisca junto com o som calibrado"></span>
+        </div>
       </label>`;
 
     const nameInput = panel.querySelector('#set-name') as HTMLInputElement;
@@ -416,9 +459,86 @@ class PagodeHeroApp {
       soundEngine.setUserLatency(this.settings.latencyMs);
       saveSettings(this.settings);
     });
+
+    const testBtn = panel.querySelector('#btn-test-latency') as HTMLButtonElement;
+    const beatDot = panel.querySelector('#latency-beat-dot') as HTMLElement;
+    testBtn.addEventListener('click', () => {
+      this.clearCalibrationTimers();
+      const beatIntervalMs = Math.round((60 / (this.selectedSong.bpm || 88)) * 1000);
+      for (let i = 0; i < 4; i++) {
+        const audioTimer = window.setTimeout(() => {
+          soundEngine.playCalibrationClick(i === 0);
+          const visualDelay = Math.max(0, soundEngine.getTotalLatencyMs());
+          const visualTimer = window.setTimeout(() => {
+            beatDot.classList.add('pulse');
+            window.setTimeout(() => beatDot.classList.remove('pulse'), 140);
+          }, visualDelay);
+          this.calibrationTimers.push(visualTimer);
+        }, i * beatIntervalMs);
+        this.calibrationTimers.push(audioTimer);
+      }
+    });
+  }
+
+  private togglePause(forcePause?: boolean) {
+    if (this.currentScreen !== 'game' || !this.gameEngine || !this.gameEngine.isGameRunning()) return;
+
+    const shouldPause = forcePause ?? !this.gameEngine.getPaused();
+    const existingModal = document.getElementById('pause-modal-overlay');
+
+    if (shouldPause) {
+      this.gameEngine.pause();
+      if (existingModal) return;
+
+      const overlay = document.createElement('div');
+      overlay.id = 'pause-modal-overlay';
+      overlay.className = 'age-modal-overlay';
+      overlay.innerHTML = `
+        <div class="age-modal-card" role="dialog" aria-modal="true" aria-labelledby="pause-modal-title">
+          <div class="age-modal-icon">⏸️</div>
+          <h2 id="pause-modal-title" class="age-modal-title">Roda Pausada</h2>
+          <p class="age-modal-desc">
+            Respira, hidrata e prepara a palheta para voltar no compasso de <strong>${escapeHtml(this.selectedSong.title)}</strong>!
+          </p>
+          <div class="age-modal-actions" style="flex-direction: column; align-items: stretch;">
+            <button id="btn-pause-resume" class="btn-primary age-btn age-btn-glow">
+              <span>▶️ Continuar a Roda</span>
+            </button>
+            <button id="btn-pause-restart" class="btn-secondary age-btn" style="justify-content: center;">
+              <span>🔁 Reiniciar Música</span>
+            </button>
+            <button id="btn-pause-quit" class="btn-secondary age-btn" style="justify-content: center;">
+              <span>⬅ Sair para o Menu</span>
+            </button>
+          </div>
+        </div>
+      `;
+
+      overlay.querySelector('#btn-pause-resume')?.addEventListener('click', () => {
+        this.togglePause(false);
+      });
+
+      overlay.querySelector('#btn-pause-restart')?.addEventListener('click', () => {
+        overlay.remove();
+        this.gameEngine?.stop();
+        this.startGame();
+      });
+
+      overlay.querySelector('#btn-pause-quit')?.addEventListener('click', () => {
+        overlay.remove();
+        this.gameEngine?.stop();
+        this.renderSongSelect();
+      });
+
+      document.body.appendChild(overlay);
+    } else {
+      existingModal?.remove();
+      this.gameEngine.resume();
+    }
   }
 
   private async startGame() {
+    document.getElementById('pause-modal-overlay')?.remove();
     this.currentScreen = 'game';
     this.appContainer.dataset.screen = 'game';
     const mainContent = document.getElementById('main-content');
@@ -437,9 +557,16 @@ class PagodeHeroApp {
         <div class="gameplay-hud">
           <div class="hud-left brush-panel">
             <button id="btn-quit-game" class="hud-quit" title="Sair da roda">⬅</button>
+            <button id="btn-pause-game" class="hud-quit" title="Pausar (Esc / P)">⏸</button>
             <div class="hud-song">
               <div class="hud-song-title">${this.selectedSong.title}</div>
-              <div class="hud-song-meta">${this.selectedSong.artist} • ${DIFFICULTY_LABEL[this.currentDifficulty]}</div>
+              <div class="hud-song-meta">
+                <span>${this.selectedSong.artist} • ${DIFFICULTY_LABEL[this.currentDifficulty]}</span>
+                <span class="hud-time" id="hud-time">0:00 / ${formatTime(this.selectedSong.duration)}</span>
+              </div>
+              <div class="hud-progress-track" aria-hidden="true">
+                <div class="hud-progress-fill" id="hud-progress-fill"></div>
+              </div>
             </div>
           </div>
 
@@ -522,8 +649,8 @@ class PagodeHeroApp {
           </div>
         </div>
 
-        <!-- Letra Dinâmica / Karaokê -->
-        <div class="lyrics-bar-wrap">
+        <!-- Status de Carregamento / Instrumentos -->
+        <div class="lyrics-bar-wrap" id="status-bar-wrap">
           <div class="lyrics-bar" id="lyrics-bar">⏳ Carregando os instrumentos...</div>
         </div>
 
@@ -545,13 +672,18 @@ class PagodeHeroApp {
     const hudScore = document.getElementById('hud-score')!;
     const hudStreak = document.getElementById('hud-streak')!;
     const hudMultiplier = document.getElementById('hud-multiplier')!;
+    const hudTime = document.getElementById('hud-time')!;
+    const hudProgressFill = document.getElementById('hud-progress-fill')!;
     const choppGlass = document.getElementById('chopp-glass')!;
     const choppLevel = document.getElementById('chopp-level')!;
     const btnGarcom = document.getElementById('btn-activate-garcom') as HTMLButtonElement;
     const meterBox = document.querySelector('.resenha-meter-container') as HTMLElement;
     let garcomWasHere = false;
+    const statusWrap = document.getElementById('status-bar-wrap')!;
     const lyricsBar = document.getElementById('lyrics-bar')!;
     const stemBadges = Array.from(document.querySelectorAll<HTMLElement>('#hud-stem-status .stem-badge'));
+
+    let lastDisplayedSecond = -1;
 
     // Instancia Engine
     const bgVideo = document.getElementById('bg-video') as HTMLVideoElement | null;
@@ -564,21 +696,25 @@ class PagodeHeroApp {
       song: this.selectedSong,
       difficulty: this.currentDifficulty,
       onLoadingProgress: (msg: string) => {
+        statusWrap.style.display = 'flex';
         lyricsBar.textContent = `⏳ ${msg}`;
+      },
+      onTimeUpdate: (currentTime: number, duration: number) => {
+        const pct = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
+        hudProgressFill.style.width = `${pct.toFixed(1)}%`;
+        const sec = Math.floor(currentTime);
+        if (sec !== lastDisplayedSecond) {
+          lastDisplayedSecond = sec;
+          hudTime.textContent = `${formatTime(sec)} / ${formatTime(duration)}`;
+        }
       },
       onMuteLevelChange: (level: number) => {
         stemBadges.forEach((badge, i) => {
           badge.className = `stem-badge ${i < level ? 'muted' : 'active'}`;
         });
-        if (level === 0) {
-          lyricsBar.textContent = '🎶 Banda completa! Segura a cadência! 🎶';
-        } else {
-          const stopped = MUTE_STAGES.slice(0, level).map((stage) => stage.label).join(', ');
-          lyricsBar.textContent = `⚠️ Pararam: ${stopped} — acerte as notas para trazer de volta!`;
-        }
       },
       onScoreUpdate: (score: GameScore) => {
-        hudScore.textContent = score.points.toLocaleString();
+        hudScore.textContent = score.points.toLocaleString('pt-BR');
         hudStreak.textContent = `${score.streak} ${score.streak >= 20 ? '🔥' : ''}`;
         hudMultiplier.textContent = `${score.multiplier}x`;
 
@@ -608,6 +744,7 @@ class PagodeHeroApp {
     });
 
     await this.gameEngine.start();
+    statusWrap.style.display = 'none';
 
     // Evento Chama o Garçom no botão
     btnGarcom.addEventListener('click', () => {
@@ -630,14 +767,21 @@ class PagodeHeroApp {
       });
     });
 
+    const pauseBtn = document.getElementById('btn-pause-game')!;
+    pauseBtn.addEventListener('click', () => {
+      this.togglePause();
+    });
+
     const quitBtn = document.getElementById('btn-quit-game')!;
     quitBtn.addEventListener('click', () => {
+      document.getElementById('pause-modal-overlay')?.remove();
       this.gameEngine?.stop();
       this.renderSongSelect();
     });
   }
 
   private renderResults(score: GameScore) {
+    document.getElementById('pause-modal-overlay')?.remove();
     this.currentScreen = 'results';
     this.appContainer.dataset.screen = 'results';
     const mainContent = document.getElementById('main-content');
@@ -686,7 +830,7 @@ class PagodeHeroApp {
           <div class="results-stats-grid">
             <div class="result-card">
               <div style="font-size: 0.75rem; color: #9fc7cc; font-weight: 700;">PONTUAÇÃO FINAL</div>
-              <div style="font-size: 2rem; font-weight: 900; color: #ffd166;">${score.points.toLocaleString()}</div>
+              <div style="font-size: 2rem; font-weight: 900; color: #ffd166;">${score.points.toLocaleString('pt-BR')}</div>
             </div>
 
             <div class="result-card">
@@ -739,6 +883,14 @@ class PagodeHeroApp {
 
       const key = e.key.toLowerCase();
 
+      if (e.key === 'Escape' || key === 'p') {
+        e.preventDefault();
+        this.togglePause();
+        return;
+      }
+
+      if (this.gameEngine.getPaused()) return;
+
       // Mapeamento exclusivo e claro das Teclas: A, S, K, L
       if (key === 'a' || key === '1') {
         e.preventDefault();
@@ -770,6 +922,13 @@ class PagodeHeroApp {
         this.gameEngine.handleKeyUp(2);
       } else if (key === 'l' || key === '4') {
         this.gameEngine.handleKeyUp(3);
+      }
+    });
+
+    // Pausa automaticamente se o jogador trocar de aba ou minimizar a janela
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && this.currentScreen === 'game' && this.gameEngine?.isGameRunning()) {
+        this.togglePause(true);
       }
     });
   }

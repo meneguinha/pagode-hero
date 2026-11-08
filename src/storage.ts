@@ -24,7 +24,28 @@ export interface ScoreEntry {
 
 const SETTINGS_KEY = 'pagodeHero.settings';
 const SCORES_KEY = 'pagodeHero.scores';
+const AGE_VERIFIED_KEY = 'pagodeHero.ageVerified';
 const MAX_SCORES = 30;
+
+let ageVerifiedInMemory = false;
+
+export function isAgeVerified(): boolean {
+  if (ageVerifiedInMemory) return true;
+  try {
+    return sessionStorage.getItem(AGE_VERIFIED_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function setAgeVerified(): void {
+  ageVerifiedInMemory = true;
+  try {
+    sessionStorage.setItem(AGE_VERIFIED_KEY, '1');
+  } catch {
+    // sem sessionStorage: mantém em memória na sessão atual
+  }
+}
 
 const DEFAULT_SETTINGS: Settings = {
   playerName: 'Pagodeiro',
